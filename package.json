@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Microservice that delivers messages as emails",
   "dependencies": {
+    "cron": "^1.5.1",
     "nodemailer": "^4.7.0"
   },
   "main": "app.js",

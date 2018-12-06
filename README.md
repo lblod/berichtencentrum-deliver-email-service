@@ -5,4 +5,5 @@ Microservice that delivers messages as emails
 ```
   GMAIL_ADDRESS: required, 'aGmailAddress'
   GMAIL_PASSWORD: required, 'theCorrespondingPassword'
+  EMAIL_CRON_PATTERN: optional, default '*/5 * * * * *'
 ```

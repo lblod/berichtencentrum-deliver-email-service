@@ -2,12 +2,21 @@ import {
   app,
   errorHandler
 } from 'mu';
+import {
+  CronJob
+} from 'cron';
 
+const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/5 * * * *';
 const nodemailer = require('nodemailer');
 
 app.get('/', async function(req, res) {
   res.send('Hello from deliver-bbcdr-rapporten-service');
 });
+
+new CronJob(cronFrequency, function() {
+  console.log(`Berichtcentrum email delivery triggered by cron job at ${new Date().toISOString()}`);
+  // Check for emails into mailbox
+}, null, true);
 
 let transporter = nodemailer.createTransport({
   service: 'gmail',
