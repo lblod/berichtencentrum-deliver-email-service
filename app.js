@@ -1,7 +1,10 @@
 import { app, errorHandler } from 'mu';
 import { CronJob } from 'cron';
 import {
-  fetchEmailsToBeSent
+  fetchEmailsToBeSent,
+  fetchEmailRecipientsTo,
+  fetchEmailRecipientsCc,
+  setEmailToSentBox
 } from './support';
 import request from 'request';
 
@@ -17,7 +20,6 @@ new CronJob(cronFrequency, function() {
   request.post('http://localhost/berichtencentrum-email-delivery/');
 }, null, true);
 
-
 app.post('/berichtencentrum-email-delivery/', async function( req, res, next ) {
   try {
     const emails = await fetchEmailsToBeSent();
@@ -27,10 +29,15 @@ app.post('/berichtencentrum-email-delivery/', async function( req, res, next ) {
     }
     console.log(`Found ${emails.length} emails to send`);
 
+    console.log(emails);
+
     Promise.all(emails.map( async (email) => {
-      console.log(`Start sending email ${emil.id}`);
+      console.log(`Start sending email ${email.messageId}`);
 
       try {
+        const emailRecipientsTo = await fetchEmailRecipientsTo(email.messageId);
+        const emailRecipientsCc = await fetchEmailRecipientsCc(email.messageId);
+
         let transporter = nodemailer.createTransport({
           service: 'gmail',
           auth: {
@@ -40,23 +47,22 @@ app.post('/berichtencentrum-email-delivery/', async function( req, res, next ) {
         });
 
         let mailOptions = {
-          from: email.from,
-          to: email.to,
-          subject: email.subject,
-          text: email.content,
-          html: email.htmlContent,
-          attachments: [
-            {
-              filename: email.file.filename
-            }
-          ]
+          from: email.messageFrom,
+          to: emailRecipientsTo.map(a => a.emailTo),
+          cc: emailRecipientsCc.map(a => a.emailCc),
+          subject: email.messageSubject,
+          text: email.plainTextMessageContent,
+          html: email.htmlMessageContent,
+          // Add attachments handling
         };
 
         transporter.sendMail(mailOptions, (error, info) => {
           if (error) {
             return console.log(error);
           }
-          setEmailToSentBox(email.id);
+          // Move the email to "sent" box
+
+          // setEmailToSentBox(email.id);
           console.log('Message sent: %s', info.messageId);
         });
       } catch(err) {
