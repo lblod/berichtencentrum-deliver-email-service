@@ -25,7 +25,14 @@ const fetchEmailsToBeSent = async function() {
     PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/03/22/nie#>
 
-    SELECT ?email ?messageId ?messageFrom ?messageSubject ?plainTextMessageContent ?htmlMessageContent
+    SELECT ?email
+      ?messageId
+      ?messageFrom
+      ?messageSubject
+      ?plainTextMessageContent
+      ?htmlMessageContent
+      (group_concat(distinct ?emailTo;separator=",") as ?emailTo)
+      (group_concat(distinct ?emailCc;separator=",") as ?emailCc)
     WHERE {
       GRAPH <http://mu.semte.ch/graphs/public> {
         <http://data.lblod.info/id/mailboxes/1> fni:hasPart ?mailfolder.
@@ -36,54 +43,11 @@ const fetchEmailsToBeSent = async function() {
         ?email nmo:messageSubject ?messageSubject.
         ?email nmo:plainTextMessageContent ?plainTextMessageContent.
         ?email nmo:htmlMessageContent ?htmlMessageContent.
-      }
-    }
-  `);
-  return parseResult(result);
-};
-
-/**
- * Retrieve email receivers for "To" property
- * @method fetchEmailReceiversTo
- * @return {Array}
- */
-const fetchEmailRecipientsTo = async function(emailId) {
-  const result = await query(`
-    PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
-    PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/03/22/nie#>
-
-    SELECT ?emailTo
-    WHERE {
-      GRAPH <http://mu.semte.ch/graphs/public> {
-        ?email a nmo:Email.
-        ?email nmo:messageId ${sparqlEscapeString(emailId)}.
         ?email nmo:emailTo ?emailTo.
-      }
-    }
-  `);
-  return parseResult(result);
-};
-
-/**
- * Retrieve email receivers for "Cc" property
- * @method fetchEmailReceiversTo
- * @return {Array}
- */
-const fetchEmailRecipientsCc = async function(emailId) {
-  const result = await query(`
-    PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
-    PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/03/22/nie#>
-
-    SELECT ?emailCc
-    WHERE {
-      GRAPH <http://mu.semte.ch/graphs/public> {
-        ?email a nmo:Email.
-        ?email nmo:messageId ${sparqlEscapeString(emailId)}.
         ?email nmo:emailCc ?emailCc.
       }
     }
+    GROUP BY ?email ?messageId ?messageFrom ?messageSubject ?plainTextMessageContent ?htmlMessageContent
   `);
   return parseResult(result);
 };
@@ -95,4 +59,4 @@ const setEmailToSentBox = async function(id) {
   return parseResult(result);
 };
 
-export { fetchEmailsToBeSent, fetchEmailRecipientsTo, fetchEmailRecipientsCc, setEmailToSentBox };
+export { fetchEmailsToBeSent, setEmailToSentBox };

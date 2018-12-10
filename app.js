@@ -2,8 +2,6 @@ import { app, errorHandler } from 'mu';
 import { CronJob } from 'cron';
 import {
   fetchEmailsToBeSent,
-  fetchEmailRecipientsTo,
-  fetchEmailRecipientsCc,
   setEmailToSentBox
 } from './support';
 import request from 'request';
@@ -29,15 +27,10 @@ app.post('/berichtencentrum-email-delivery/', async function( req, res, next ) {
     }
     console.log(`Found ${emails.length} emails to send`);
 
-    console.log(emails);
-
     Promise.all(emails.map( async (email) => {
       console.log(`Start sending email ${email.messageId}`);
 
       try {
-        const emailRecipientsTo = await fetchEmailRecipientsTo(email.messageId);
-        const emailRecipientsCc = await fetchEmailRecipientsCc(email.messageId);
-
         let transporter = nodemailer.createTransport({
           service: 'gmail',
           auth: {
@@ -48,8 +41,8 @@ app.post('/berichtencentrum-email-delivery/', async function( req, res, next ) {
 
         let mailOptions = {
           from: email.messageFrom,
-          to: emailRecipientsTo.map(a => a.emailTo),
-          cc: emailRecipientsCc.map(a => a.emailCc),
+          to: email.emailTo,
+          cc: email.emailCc,
           subject: email.messageSubject,
           text: email.plainTextMessageContent,
           html: email.htmlMessageContent,
