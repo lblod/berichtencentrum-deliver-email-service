@@ -15,10 +15,10 @@ app.get('/', async function(req, res) {
 
 new CronJob(cronFrequency, function() {
   console.log(`Berichtcentrum email delivery triggered by cron job at ${new Date().toISOString()}`);
-  request.post('http://localhost/berichtencentrum-email-delivery/');
+  request.patch('http://localhost/berichtencentrum-email-delivery/');
 }, null, true);
 
-app.post('/berichtencentrum-email-delivery/', async function( req, res, next ) {
+app.patch('/berichtencentrum-email-delivery/', async function( req, res, next ) {
   try {
     const emails = await fetchEmailsToBeSent();
     if (emails.length == 0) {
@@ -53,11 +53,11 @@ app.post('/berichtencentrum-email-delivery/', async function( req, res, next ) {
           if (error) {
             return console.log(error);
           }
-          // Move the email to "sent" box
-
-          // setEmailToSentBox(email.id);
           console.log('Message sent: %s', info.messageId);
         });
+
+        setEmailToSentBox(email.messageId);
+        console.log('Message moved to sentbox: %s', info.messageId);
       } catch(err) {
         console.log(`Failed to send email ${email.id}: ${err}`);
       }
