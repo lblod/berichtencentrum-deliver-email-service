@@ -2,7 +2,7 @@ import { app, errorHandler } from 'mu';
 import { CronJob } from 'cron';
 import {
   fetchEmailsToBeSent,
-  setEmailToSentBox
+  setEmailToMailbox
 } from './support';
 import request from 'request';
 
@@ -31,6 +31,9 @@ app.patch('/berichtencentrum-email-delivery/', async function( req, res, next ) 
       console.log(`Start sending email ${email.messageId}`);
 
       try {
+        setEmailToMailbox(email.messageId, "sending");
+        console.log(`Message moved to sending: ${email.messageId}`);
+
         let transporter = nodemailer.createTransport({
           service: 'gmail',
           auth: {
@@ -53,13 +56,15 @@ app.patch('/berichtencentrum-email-delivery/', async function( req, res, next ) 
           if (error) {
             return console.log(error);
           }
-          console.log('Message sent: %s', info.messageId);
+          console.log(`Message sent: %s`, info.messageId);
         });
 
-        setEmailToSentBox(email.messageId);
-        console.log('Message moved to sentbox: %s', info.messageId);
+        setEmailToMailbox(email.messageId, "sentbox");
+        console.log(`Message moved to sentbox: ${email.messageId}`);
       } catch(err) {
-        console.log(`Failed to send email ${email.id}: ${err}`);
+        console.log(`Failed to send email ${email.messageId}: ${err}`);
+        setEmailToMailbox(email.messageId, "outbox");
+        console.log(`Message moved back to outbox: ${email.messageId}`);
       }
     }));
   }

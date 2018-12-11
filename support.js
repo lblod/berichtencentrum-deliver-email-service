@@ -52,7 +52,7 @@ const fetchEmailsToBeSent = async function() {
   return parseResult(result);
 };
 
-const setEmailToSentBox = async function(emailId) {
+const setEmailToMailbox = async function(emailId, mailboxName) {
   const result = await query(`
     PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
     PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
@@ -73,7 +73,8 @@ const setEmailToSentBox = async function(emailId) {
     ;
     INSERT {
        GRAPH <http://mu.semte.ch/graphs/public> {
-           ?email nmo:isPartOf <http://data.lblod.info/id/mail-folders/3> .
+           ?mailfolder nie:title ${sparqlEscapeString(mailboxName)}.
+           ?email nmo:isPartOf ?mailfolder .
         }
     }
     WHERE {
@@ -86,4 +87,4 @@ const setEmailToSentBox = async function(emailId) {
 `);
 };
 
-export { fetchEmailsToBeSent, setEmailToSentBox };
+export { fetchEmailsToBeSent, setEmailToMailbox };
