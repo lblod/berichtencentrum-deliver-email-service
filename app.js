@@ -55,6 +55,8 @@ app.patch('/berichtencentrum-email-delivery/', async function( req, res, next ) 
         transporter.sendMail(mailOptions, (error, info) => {
           if (error) {
             return console.log(error);
+          } else {
+            email.messageId = info.messageId;
           }
           console.log(`Message sent: %s`, info.messageId);
         });
