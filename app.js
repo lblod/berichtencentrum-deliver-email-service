@@ -18,7 +18,7 @@ new CronJob(cronFrequency, function() {
   request.patch('http://localhost/berichtencentrum-email-delivery/');
 }, null, true);
 
-app.patch('/berichtencentrum-email-delivery/', async function( req, res, next ) {
+app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
   try {
     const emails = await fetchEmailsToBeSent();
     if (emails.length == 0) {
@@ -78,14 +78,13 @@ app.patch('/berichtencentrum-email-delivery/', async function( req, res, next ) 
 
         setEmailToMailbox(email.messageId, "sentbox");
         console.log(`Message moved to sentbox: ${email.messageId}`);
-      } catch(err) {
+      } catch (err) {
         console.log(`Failed to send email ${email.messageId}: ${err}`);
         setEmailToMailbox(email.messageId, "outbox");
         console.log(`Message moved back to outbox: ${email.messageId}`);
       }
     }));
-  }
-  catch(e) {
+  } catch (e) {
     return next(new Error(e.message));
   }
 });
