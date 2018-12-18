@@ -27,20 +27,35 @@ app.patch('/berichtencentrum-email-delivery/', async function( req, res, next ) 
     }
     console.log(`Found ${emails.length} emails to send`);
 
-    Promise.all(emails.map( async (email) => {
+    Promise.all(emails.map(async (email) => {
       console.log(`Start sending email ${email.messageId}`);
 
       try {
         setEmailToMailbox(email.messageId, "sending");
         console.log(`Message moved to sending: ${email.messageId}`);
 
-        let transporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-            user: process.env.GMAIL_ADDRESS,
-            pass: process.env.GMAIL_PASSWORD
-          }
-        });
+        let gmailOrServer = process.env.GMAIL_OR_SERVER;
+        if(gmailOrServer != ('gmail' || 'server')) {
+          return console.log(`GMAIL_OR_SERVER should be 'gmail' or 'port'`);
+        } else if (gmailOrServer == 'gmail') {
+          let transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_ADDRESS,
+              pass: process.env.EMAIL_PASSWORD
+            }
+          });
+        } else {
+          let transporter = nodemailer.createTransport(smtpTransport({
+            host: process.env.HOST,
+            port: process.env.PORT,
+            secureConnection: process.env.SECURE_CONNECTION || false,
+            auth: {
+              user: process.env.EMAIL_ADDRESS,
+              pass: process.env.EMAIL_PASSWORD
+            }
+          }));
+        };
 
         let mailOptions = {
           from: email.messageFrom,
