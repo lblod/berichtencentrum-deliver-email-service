@@ -2,11 +2,13 @@ import { app, errorHandler } from 'mu';
 import { CronJob } from 'cron';
 import {
   fetchEmailsToBeSent,
-  setEmailToMailbox
+  setEmailToMailbox,
+  updateEmailId
 } from './support';
 import request from 'request';
 
-const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/5 * * * *';
+const fromName = process.env.FROM_NAME || '';
+const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/1 * * * *';
 const nodemailer = require('nodemailer');
 
 app.get('/', async function(req, res) {
@@ -37,49 +39,55 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
         let gmailOrServer = process.env.GMAIL_OR_SERVER;
         if(gmailOrServer != ('gmail' || 'server')) {
           return console.log(`GMAIL_OR_SERVER should be 'gmail' or 'port'`);
-        } else if (gmailOrServer == 'gmail') {
-          let transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-              user: process.env.EMAIL_ADDRESS,
-              pass: process.env.EMAIL_PASSWORD
+        } else {
+          let transporter = null;
+          if (gmailOrServer == 'gmail') {
+            transporter = nodemailer.createTransport({
+              service: 'gmail',
+              auth: {
+                user: process.env.EMAIL_ADDRESS,
+                pass: process.env.EMAIL_PASSWORD
+              }
+            });
+          } else {
+            transporter = nodemailer.createTransport(smtpTransport({
+              host: process.env.HOST,
+              port: process.env.PORT,
+              secureConnection: process.env.SECURE_CONNECTION || false,
+              auth: {
+                user: process.env.EMAIL_ADDRESS,
+                pass: process.env.EMAIL_PASSWORD
+              }
+            }));
+          };
+
+          let mailOptions = {
+            from: fromName + ' ' + email.from,
+            to: email.to,
+            cc: email.emailCc,
+            subject: email.messageSubject,
+            text: email.plainTextMessageContent,
+            html: email.htmlMessageContent,
+            // Add attachments handling
+          };
+
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.log(`An error has occured while sending message ${email.messageId} : ${error}`);
+              setEmailToMailbox(email.messageId, "outbox");
+              console.log(`Message moved back to outbox: ${email.messageId}`);
+            } else {
+              console.log(`Message sent: %s`, info.messageId);
+              setEmailToMailbox(email.messageId, "sentbox");
+              console.log(`Message moved to sentbox: ${email.messageId}`);
+              updateEmailId(email.messageId, info.messageId);
+              console.log(`Message ID updated from ${email.messageId} to ${info.messageId}`);
+              email.messageId = info.messageId;
             }
           });
-        } else {
-          let transporter = nodemailer.createTransport(smtpTransport({
-            host: process.env.HOST,
-            port: process.env.PORT,
-            secureConnection: process.env.SECURE_CONNECTION || false,
-            auth: {
-              user: process.env.EMAIL_ADDRESS,
-              pass: process.env.EMAIL_PASSWORD
-            }
-          }));
-        };
-
-        let mailOptions = {
-          from: email.messageFrom,
-          to: email.emailTo,
-          cc: email.emailCc,
-          subject: email.messageSubject,
-          text: email.plainTextMessageContent,
-          html: email.htmlMessageContent,
-          // Add attachments handling
-        };
-
-        transporter.sendMail(mailOptions, (error, info) => {
-          if (error) {
-            return console.log(error);
-          } else {
-            email.messageId = info.messageId;
-          }
-          console.log(`Message sent: %s`, info.messageId);
-        });
-
-        setEmailToMailbox(email.messageId, "sentbox");
-        console.log(`Message moved to sentbox: ${email.messageId}`);
+        }
       } catch (err) {
-        console.log(`Failed to send email ${email.messageId}: ${err}`);
+        console.log(`Failed to process email sending for email ${email.messageId}: ${err}`);
         setEmailToMailbox(email.messageId, "outbox");
         console.log(`Message moved back to outbox: ${email.messageId}`);
       }

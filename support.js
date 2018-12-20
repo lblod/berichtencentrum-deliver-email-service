@@ -57,6 +57,7 @@ const setEmailToMailbox = async function(emailId, mailboxName) {
     PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
     PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/03/22/nie#>
+    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
 
     DELETE {
        GRAPH <http://mu.semte.ch/graphs/public> {
@@ -67,24 +68,53 @@ const setEmailToMailbox = async function(emailId, mailboxName) {
       GRAPH <http://mu.semte.ch/graphs/public> {
             ?email a nmo:Email.
             ?email nmo:messageId ${sparqlEscapeString(emailId)}.
-            ?email nmo:isPartOf ?folder
+            ?email nmo:isPartOf ?folder.
         }
     }
     ;
     INSERT {
        GRAPH <http://mu.semte.ch/graphs/public> {
-           ?mailfolder nie:title ${sparqlEscapeString(mailboxName)}.
-           ?email nmo:isPartOf ?mailfolder .
+           ?email nmo:isPartOf ?mailfolder.
+        }
+    }
+    WHERE {
+      GRAPH <http://mu.semte.ch/graphs/public> {
+            ?mailfolder a nfo:Folder.
+            ?mailfolder nie:title  ${sparqlEscapeString(mailboxName)}.
+            ?email a nmo:Email.
+            ?email nmo:messageId ${sparqlEscapeString(emailId)}.
+        }
+    }
+`);
+};
+
+const updateEmailId = async function(oldEmailId, newEmailId) {
+  const result = await query(`
+    PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
+    PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
+    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/03/22/nie#>
+
+    DELETE {
+       GRAPH <http://mu.semte.ch/graphs/public> {
+            ?email nmo:messageId ${sparqlEscapeString(oldEmailId)}.
+        }
+     }
+    INSERT {
+       GRAPH <http://mu.semte.ch/graphs/public> {
+           ?email nmo:messageId ${sparqlEscapeString(newEmailId)}.
         }
     }
     WHERE {
       GRAPH <http://mu.semte.ch/graphs/public> {
             ?email a nmo:Email.
-            ?email nmo:messageId ${sparqlEscapeString(emailId)}.
+            ?email nmo:messageId ${sparqlEscapeString(oldEmailId)}.
         }
     }
-
 `);
 };
 
-export { fetchEmailsToBeSent, setEmailToMailbox };
+export {
+  fetchEmailsToBeSent,
+  setEmailToMailbox,
+  updateEmailId
+};

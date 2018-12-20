@@ -9,5 +9,7 @@ Microservice that delivers messages as emails
   SECURE_CONNECTION: optional if GMAIL_OR_SERVER=='server', 'true' or 'false', default 'false'
   EMAIL_ADDRESS: required, 'aGmailAddress'
   EMAIL_PASSWORD: required, 'theCorrespondingPassword'
+  FROM_NAME: optional, 'name' to put before the sender email address
+
   EMAIL_CRON_PATTERN: optional, default '*/5 * * * * *'
 ```
