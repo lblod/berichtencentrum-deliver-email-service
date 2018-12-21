@@ -8,7 +8,7 @@ import {
 import request from 'request';
 
 const fromName = process.env.FROM_NAME || '';
-const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/1 * * * *';
+const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/5 * * * *';
 const nodemailer = require('nodemailer');
 
 app.get('/', async function(req, res) {
@@ -30,11 +30,11 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
     console.log(`Found ${emails.length} emails to send`);
 
     Promise.all(emails.map(async (email) => {
-      console.log(`Start sending email ${email.messageId}`);
+      console.log(`Start sending email ${email.uuid}`);
 
       try {
-        setEmailToMailbox(email.messageId, "sending");
-        console.log(`Message moved to sending: ${email.messageId}`);
+        setEmailToMailbox(email.uuid, "sending");
+        console.log(`Message moved to sending: ${email.uuid}`);
 
         let gmailOrServer = process.env.GMAIL_OR_SERVER;
         if(gmailOrServer != ('gmail' || 'server')) {
@@ -61,35 +61,44 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
             }));
           };
 
+          let attachments = null;
+          if (email.attachments) {
+            attachments = email.attachments.map((attachment)=>{
+              return { filename: attachment.filename, path: attachment.dataSource };
+            });
+          } else {
+            attachments = [];
+          }
+
           let mailOptions = {
             from: fromName + ' ' + email.from,
-            to: email.to,
+            to: 'claire.lovisa@redpencil.io',
             cc: email.emailCc,
             subject: email.messageSubject,
             text: email.plainTextMessageContent,
             html: email.htmlMessageContent,
-            // Add attachments handling
+            attachments: attachments
           };
 
           transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
-              console.log(`An error has occured while sending message ${email.messageId} : ${error}`);
-              setEmailToMailbox(email.messageId, "outbox");
-              console.log(`Message moved back to outbox: ${email.messageId}`);
+              console.log(`An error has occured while sending message ${email.uuid} : ${error}`);
+              setEmailToMailbox(email.uuid, "outbox");
+              console.log(`Message moved back to outbox: ${email.uuid}`);
             } else {
-              console.log(`Message sent: %s`, info.messageId);
-              setEmailToMailbox(email.messageId, "sentbox");
-              console.log(`Message moved to sentbox: ${email.messageId}`);
+              console.log(`Message sent: %s`, email.uuid);
+              setEmailToMailbox(email.uuid, "sentbox");
+              console.log(`Message moved to sentbox: ${email.uuid}`);
               updateEmailId(email.messageId, info.messageId);
-              console.log(`Message ID updated from ${email.messageId} to ${info.messageId}`);
+              console.log(`MessageId updated from ${email.messageId} to ${info.messageId}`);
               email.messageId = info.messageId;
             }
           });
         }
       } catch (err) {
-        console.log(`Failed to process email sending for email ${email.messageId}: ${err}`);
-        setEmailToMailbox(email.messageId, "outbox");
-        console.log(`Message moved back to outbox: ${email.messageId}`);
+        console.log(`Failed to process email sending for email ${email.uuid}: ${err}`);
+        setEmailToMailbox(email.uuid, "outbox");
+        console.log(`Message moved back to outbox: ${email.uuid}`);
       }
     }));
   } catch (e) {
