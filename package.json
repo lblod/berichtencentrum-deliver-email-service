@@ -4,7 +4,8 @@
   "description": "Microservice that delivers messages as emails",
   "dependencies": {
     "cron": "^1.5.1",
-    "nodemailer": "^4.7.0"
+    "nodemailer": "^4.7.0",
+    "request": "^2.88.0"
   },
   "main": "app.js",
   "scripts": {

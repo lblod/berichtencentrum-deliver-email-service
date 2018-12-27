@@ -1,11 +1,13 @@
+import { app, errorHandler } from 'mu';
+import { CronJob } from 'cron';
 import {
-  app,
-  errorHandler
-} from 'mu';
-import {
-  CronJob
-} from 'cron';
+  fetchEmailsToBeSent,
+  setEmailToMailbox,
+  updateEmailId
+} from './support';
+import request from 'request';
 
+const fromName = process.env.FROM_NAME || '';
 const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/5 * * * *';
 const nodemailer = require('nodemailer');
 
@@ -15,37 +17,93 @@ app.get('/', async function(req, res) {
 
 new CronJob(cronFrequency, function() {
   console.log(`Berichtcentrum email delivery triggered by cron job at ${new Date().toISOString()}`);
-  // Check for emails into mailbox
+  request.patch('http://localhost/berichtencentrum-email-delivery/');
 }, null, true);
 
-let transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_ADDRESS,
-    pass: process.env.GMAIL_PASSWORD
-  }
-});
-
-let mailOptions = {
-  from: '"Claire Lovisa" <claire.lovisa@redpencil.io>',
-  to: 'claire.lovisa@redpencil.io',
-  subject: 'Hello ✔',
-  text: 'Hello world?',
-  html: '<b>Hello world?</b>',
-  attachments: [
-    {
-      filename: 'hello.txt',
-      content: 'Hello world !'
+app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
+  try {
+    const emails = await fetchEmailsToBeSent();
+    if (emails.length == 0) {
+      console.log(`No emails found that need to be sent`);
+      return res.status(204).end();
     }
-  ]
-};
+    console.log(`Found ${emails.length} emails to send`);
 
-transporter.sendMail(mailOptions, (error, info) => {
-  if (error) {
-    return console.log(error);
+    Promise.all(emails.map(async (email) => {
+      console.log(`Start sending email ${email.uuid}`);
+
+      try {
+        setEmailToMailbox(email.uuid, "sending");
+        console.log(`Message moved to sending: ${email.uuid}`);
+
+        let gmailOrServer = process.env.GMAIL_OR_SERVER;
+        if(gmailOrServer != ('gmail' || 'server')) {
+          return console.log(`GMAIL_OR_SERVER should be 'gmail' or 'port'`);
+        } else {
+          let transporter = null;
+          if (gmailOrServer == 'gmail') {
+            transporter = nodemailer.createTransport({
+              service: 'gmail',
+              auth: {
+                user: process.env.EMAIL_ADDRESS,
+                pass: process.env.EMAIL_PASSWORD
+              }
+            });
+          } else {
+            transporter = nodemailer.createTransport(smtpTransport({
+              host: process.env.HOST,
+              port: process.env.PORT,
+              secureConnection: process.env.SECURE_CONNECTION || false,
+              auth: {
+                user: process.env.EMAIL_ADDRESS,
+                pass: process.env.EMAIL_PASSWORD
+              }
+            }));
+          };
+
+          let attachments = null;
+          if (email.attachments) {
+            attachments = email.attachments.map((attachment)=>{
+              return { filename: attachment.filename, path: attachment.dataSource };
+            });
+          } else {
+            attachments = [];
+          }
+
+          let mailOptions = {
+            from: fromName + ' ' + email.from,
+            to: 'claire.lovisa@redpencil.io',
+            cc: email.emailCc,
+            subject: email.messageSubject,
+            text: email.plainTextMessageContent,
+            html: email.htmlMessageContent,
+            attachments: attachments
+          };
+
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.log(`An error has occured while sending message ${email.uuid} : ${error}`);
+              setEmailToMailbox(email.uuid, "outbox");
+              console.log(`Message moved back to outbox: ${email.uuid}`);
+            } else {
+              console.log(`Message sent: %s`, email.uuid);
+              setEmailToMailbox(email.uuid, "sentbox");
+              console.log(`Message moved to sentbox: ${email.uuid}`);
+              updateEmailId(email.messageId, info.messageId);
+              console.log(`MessageId updated from ${email.messageId} to ${info.messageId}`);
+              email.messageId = info.messageId;
+            }
+          });
+        }
+      } catch (err) {
+        console.log(`Failed to process email sending for email ${email.uuid}: ${err}`);
+        setEmailToMailbox(email.uuid, "outbox");
+        console.log(`Message moved back to outbox: ${email.uuid}`);
+      }
+    }));
+  } catch (e) {
+    return next(new Error(e.message));
   }
-  console.log('Message sent: %s', info.messageId);
-  console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
 });
 
 app.use(errorHandler);
