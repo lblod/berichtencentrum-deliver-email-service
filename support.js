@@ -1,4 +1,5 @@
-import { app, query, sparqlEscapeString, sparqlEscapeUrl } from 'mu';
+import { app, sparqlEscapeString, sparqlEscapeUri } from 'mu';
+import { querySudo as query } from './auth-sudo';
 
 /**
  * Convert results of select query to an array of objects.
@@ -35,7 +36,7 @@ const fetchEmailsToBeSent = async function(graphName) {
       ?plainTextMessageContent
       ?htmlMessageContent
     WHERE {
-      GRAPH ${sparqlEscapeUrl(graphName)} {
+      GRAPH ${sparqlEscapeUri(graphName)} {
         <http://data.lblod.info/id/mailboxes/1> fni:hasPart ?mailfolder.
         ?mailfolder nie:title "outbox".
         ?email nmo:isPartOf ?mailfolder.
@@ -74,12 +75,12 @@ const setEmailToMailbox = async function(graphName, mailId, mailboxName) {
     PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
 
     DELETE {
-       GRAPH ${sparqlEscapeUrl(graphName)} {
+       GRAPH ${sparqlEscapeUri(graphName)} {
             ?email nmo:isPartOf ?folder.
         }
      }
     WHERE {
-      GRAPH ${sparqlEscapeUrl(graphName)} {
+      GRAPH ${sparqlEscapeUri(graphName)} {
             ?email a nmo:Email.
             ?email <http://mu.semte.ch/vocabularies/core/uuid> ${sparqlEscapeString(emailId)}.
             ?email nmo:isPartOf ?folder.
@@ -87,12 +88,12 @@ const setEmailToMailbox = async function(graphName, mailId, mailboxName) {
     }
     ;
     INSERT {
-       GRAPH ${sparqlEscapeUrl(graphName)} {
+       GRAPH ${sparqlEscapeUri(graphName)} {
            ?email nmo:isPartOf ?mailfolder.
         }
     }
     WHERE {
-      GRAPH ${sparqlEscapeUrl(graphName)} {
+      GRAPH ${sparqlEscapeUri(graphName)} {
             ?mailfolder a nfo:Folder.
             ?mailfolder nie:title  ${sparqlEscapeString(mailboxName)}.
             ?email a nmo:Email.
@@ -109,17 +110,17 @@ const updateEmailId = async function(graphName, oldMessageId, newMessageId) {
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/03/22/nie#>
 
     DELETE {
-       GRAPH ${sparqlEscapeUrl(graphName)} {
+       GRAPH ${sparqlEscapeUri(graphName)} {
             ?email nmo:messageId ${sparqlEscapeString(oldMessageId)}.
         }
      }
     INSERT {
-       GRAPH ${sparqlEscapeUrl(graphName)} {
+       GRAPH ${sparqlEscapeUri(graphName)} {
            ?email nmo:messageId ${sparqlEscapeString(newMessageId)}.
         }
     }
     WHERE {
-      GRAPH ${sparqlEscapeUrl(graphName)} {
+      GRAPH ${sparqlEscapeUri(graphName)} {
             ?email a nmo:Email.
             ?email nmo:messageId ${sparqlEscapeString(oldMessageId)}.
         }
