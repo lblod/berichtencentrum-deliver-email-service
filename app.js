@@ -73,7 +73,7 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
 
           let mailOptions = {
             from: fromName + ' ' + email.from,
-            to: 'claire.lovisa@redpencil.io',
+            to: email.to,
             cc: email.emailCc,
             subject: email.messageSubject,
             text: email.plainTextMessageContent,
