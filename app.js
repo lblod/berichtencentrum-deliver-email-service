@@ -10,7 +10,7 @@ import request from 'request';
 const fromName = process.env.FROM_NAME || '';
 const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/5 * * * *';
 const nodemailer = require('nodemailer');
-const graphName = process.env.GRAPH_NAME || '<http://mu.semte.ch/graphs/system/email>';
+const graphName = process.env.GRAPH_NAME || 'http://mu.semte.ch/graphs/system/email';
 
 app.get('/', async function(req, res) {
   res.send('Hello from deliver-bbcdr-rapporten-service');

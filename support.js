@@ -67,7 +67,7 @@ const fetchEmailsToBeSent = async function(graphName) {
   return parseResult(result);
 };
 
-const setEmailToMailbox = async function(graphName, mailId, mailboxName) {
+const setEmailToMailbox = async function(graphName, emailId, mailboxName) {
   const result = await query(`
     PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
     PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
