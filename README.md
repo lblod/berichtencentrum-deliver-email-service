@@ -1,5 +1,6 @@
 # berichtencentrum-deliver-email-service
-Microservice that delivers messages as emails
+
+Microservice that delivers emails from a mail folder
 
 ## Installation
 
