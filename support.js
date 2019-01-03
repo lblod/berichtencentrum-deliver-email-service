@@ -1,4 +1,4 @@
-import { app, query, sparqlEscapeString } from 'mu';
+import { app, query, sparqlEscapeString, sparqlEscapeUrl } from 'mu';
 
 /**
  * Convert results of select query to an array of objects.
@@ -19,7 +19,7 @@ const parseResult = function(result) {
  * @method fetchEmailsToBeSent
  * @return {Array}
  */
-const fetchEmailsToBeSent = async function() {
+const fetchEmailsToBeSent = async function(graphName) {
   const result = await query(`
     PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
     PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
@@ -35,7 +35,7 @@ const fetchEmailsToBeSent = async function() {
       ?plainTextMessageContent
       ?htmlMessageContent
     WHERE {
-      GRAPH <http://mu.semte.ch/graphs/public> {
+      GRAPH ${sparqlEscapeUrl(graphName)} {
         <http://data.lblod.info/id/mailboxes/1> fni:hasPart ?mailfolder.
         ?mailfolder nie:title "outbox".
         ?email nmo:isPartOf ?mailfolder.
@@ -66,7 +66,7 @@ const fetchEmailsToBeSent = async function() {
   return parseResult(result);
 };
 
-const setEmailToMailbox = async function(emailId, mailboxName) {
+const setEmailToMailbox = async function(graphName, mailId, mailboxName) {
   const result = await query(`
     PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
     PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
@@ -74,12 +74,12 @@ const setEmailToMailbox = async function(emailId, mailboxName) {
     PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
 
     DELETE {
-       GRAPH <http://mu.semte.ch/graphs/public> {
+       GRAPH ${sparqlEscapeUrl(graphName)} {
             ?email nmo:isPartOf ?folder.
         }
      }
     WHERE {
-      GRAPH <http://mu.semte.ch/graphs/public> {
+      GRAPH ${sparqlEscapeUrl(graphName)} {
             ?email a nmo:Email.
             ?email <http://mu.semte.ch/vocabularies/core/uuid> ${sparqlEscapeString(emailId)}.
             ?email nmo:isPartOf ?folder.
@@ -87,12 +87,12 @@ const setEmailToMailbox = async function(emailId, mailboxName) {
     }
     ;
     INSERT {
-       GRAPH <http://mu.semte.ch/graphs/public> {
+       GRAPH ${sparqlEscapeUrl(graphName)} {
            ?email nmo:isPartOf ?mailfolder.
         }
     }
     WHERE {
-      GRAPH <http://mu.semte.ch/graphs/public> {
+      GRAPH ${sparqlEscapeUrl(graphName)} {
             ?mailfolder a nfo:Folder.
             ?mailfolder nie:title  ${sparqlEscapeString(mailboxName)}.
             ?email a nmo:Email.
@@ -102,24 +102,24 @@ const setEmailToMailbox = async function(emailId, mailboxName) {
 `);
 };
 
-const updateEmailId = async function(oldMessageId, newMessageId) {
+const updateEmailId = async function(graphName, oldMessageId, newMessageId) {
   const result = await query(`
     PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
     PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/03/22/nie#>
 
     DELETE {
-       GRAPH <http://mu.semte.ch/graphs/public> {
+       GRAPH ${sparqlEscapeUrl(graphName)} {
             ?email nmo:messageId ${sparqlEscapeString(oldMessageId)}.
         }
      }
     INSERT {
-       GRAPH <http://mu.semte.ch/graphs/public> {
+       GRAPH ${sparqlEscapeUrl(graphName)} {
            ?email nmo:messageId ${sparqlEscapeString(newMessageId)}.
         }
     }
     WHERE {
-      GRAPH <http://mu.semte.ch/graphs/public> {
+      GRAPH ${sparqlEscapeUrl(graphName)} {
             ?email a nmo:Email.
             ?email nmo:messageId ${sparqlEscapeString(oldMessageId)}.
         }

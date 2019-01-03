@@ -28,6 +28,8 @@ services:
   FROM_NAME: optional, 'name' to put before the sender email address
 
   EMAIL_CRON_PATTERN: optional, default '*/5 * * * * *'
+
+  GRAPH_NAME: optional, '<http://graph/url>', default '<http://mu.semte.ch/graphs/system/email>'
 ```
 
 ### Development
