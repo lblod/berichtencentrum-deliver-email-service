@@ -18,6 +18,21 @@ services:
 ```
 
 ### Environment variables
+
+#### System configuration
+
+```
+EMAIL_CRON_PATTERN: optional, default '*/5 * * * * *'
+GRAPH_NAME: optional, 'http://graph/url', default 'http://mu.semte.ch/graphs/system/email'
+```
+
+#### Protocole choice
+```
+  SMTP_OR_REST : 'smtp' or 'rest'
+```
+
+#### SMTP
+
 ```
   GMAIL_OR_SERVER: required, 'gmail' or 'server'
   HOST: required if GMAIL_OR_SERVER=='server', 'hostName'
@@ -25,11 +40,15 @@ services:
   SECURE_CONNECTION: optional if GMAIL_OR_SERVER=='server', 'true' or 'false', default 'false'
   EMAIL_ADDRESS: required, 'aGmailAddress'
   EMAIL_PASSWORD: required, 'theCorrespondingPassword'
-  FROM_NAME: optional, 'name' to put before the sender email address
+```
 
-  EMAIL_CRON_PATTERN: optional, default '*/5 * * * * *'
+#### REST
 
-  GRAPH_NAME: optional, 'http://graph/url', default 'http://mu.semte.ch/graphs/system/email'
+
+
+#### Email configuration
+```
+FROM_NAME: optional, 'name' to put before the sender email address
 ```
 
 ### Development
