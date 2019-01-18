@@ -1,6 +1,6 @@
 {
   "name": "berichtencentrum-deliver-email-service",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Microservice that delivers emails from a mail folder",
   "dependencies": {
     "cron": "^1.5.1",
