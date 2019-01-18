@@ -8,7 +8,7 @@ import {
 import request from 'request';
 
 const fromName = process.env.FROM_NAME || '';
-const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/5 * * * *';
+const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/1 * * * *';
 const nodemailer = require('nodemailer');
 const graphName = process.env.GRAPH_NAME || 'http://mu.semte.ch/graphs/system/email';
 
@@ -34,12 +34,12 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
       console.log(`Start sending email ${email.uuid}`);
 
       try {
-        setEmailToMailbox(graphName, email.uuid, "sending");
+        await setEmailToMailbox(graphName, email.uuid, "sending");
         console.log(`Message moved to sending: ${email.uuid}`);
 
         const smtpOrRest = process.env.SMTP_OR_REST;
         if (smtpOrRest == 'smtp') {
-          processEmailSmtp(email);
+          await processEmailSmtp(email);
         } else if (smtpOrRest == 'rest') {
           //TODO
         } else {
@@ -47,7 +47,7 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
         }
       } catch (err) {
         console.log(`Failed to process email sending for email ${email.uuid}: ${err}`);
-        setEmailToMailbox(graphName, email.uuid, "outbox");
+        await setEmailToMailbox(graphName, email.uuid, "outbox");
         console.log(`Message moved back to outbox: ${email.uuid}`);
       }
     }));
@@ -95,7 +95,7 @@ const processEmailSmtp = async function(email) {
     }
 
     const mailOptions = {
-      from: fromName + ' ' + email.from,
+      from: `${fromName} ${email.from}`,
       to: email.emailTo,
       cc: email.emailCc,
       subject: email.messageSubject,
@@ -104,16 +104,16 @@ const processEmailSmtp = async function(email) {
       attachments: attachments
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
+    transporter.sendMail(mailOptions, async (error, info) => {
       if (error) {
         console.log(`An error has occured while sending message ${email.uuid} : ${error}`);
-        setEmailToMailbox(graphName, email.uuid, "outbox");
+        await setEmailToMailbox(graphName, email.uuid, "outbox");
         console.log(`Message moved back to outbox: ${email.uuid}`);
       } else {
         console.log(`Message sent: %s`, email.uuid);
-        setEmailToMailbox(graphName, email.uuid, "sentbox");
+        await setEmailToMailbox(graphName, email.uuid, "sentbox");
         console.log(`Message moved to sentbox: ${email.uuid}`);
-        updateEmailId(graphName, email.messageId, info.messageId);
+        await updateEmailId(graphName, email.messageId, info.messageId);
         console.log(`MessageId updated from ${email.messageId} to ${info.messageId}`);
         email.messageId = info.messageId;
       }
