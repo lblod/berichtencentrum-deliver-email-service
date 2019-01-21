@@ -13,7 +13,7 @@ services:
   berichtencentrum-deliver-email-service:
     image: lblod/berichtencentrum-deliver-email-service
     environment:
-      GMAIL_OR_SERVER: "..."
+      WELL_KNOWN_SERVICE_OR_SERVER: "..."
       [...]
 ```
 
@@ -34,7 +34,7 @@ GRAPH_NAME: optional, 'http://graph/url', default 'http://mu.semte.ch/graphs/sys
 #### SMTP
 
 ```
-  GMAIL_OR_SERVER: required, 'gmail' or 'server'
+  WELL_KNOWN_SERVICE_OR_SERVER: required, service from list https://nodemailer.com/smtp/well-known/ or 'server'
   HOST: required if GMAIL_OR_SERVER=='server', 'hostName'
   PORT: required if GMAIL_OR_SERVER=='server', 80
   SECURE_CONNECTION: optional if GMAIL_OR_SERVER=='server', 'true' or 'false', default 'false'

@@ -3,7 +3,8 @@ import { CronJob } from 'cron';
 import {
   fetchEmailsToBeSent,
   setEmailToMailbox,
-  updateEmailId
+  updateEmailId,
+  wellKnownServices
 } from './support';
 import request from 'request';
 
@@ -11,6 +12,7 @@ const fromName = process.env.FROM_NAME || '';
 const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/1 * * * *';
 const nodemailer = require('nodemailer');
 const graphName = process.env.GRAPH_NAME || 'http://mu.semte.ch/graphs/system/email';
+const nodemailerServices = wellKnownServices();
 
 app.get('/', async function(req, res) {
   res.send('Hello from deliver-bbcdr-rapporten-service');
@@ -57,14 +59,14 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
 });
 
 const processEmailSmtp = async function(email) {
-  const gmailOrServer = process.env.GMAIL_OR_SERVER;
-  if (gmailOrServer != ('gmail' || 'server')) {
-    return console.log(`GMAIL_OR_SERVER should be 'gmail' or 'port'`);
+  const wellKnownServiceOrServer = process.env.WELL_KNOWN_SERVICE_OR_SERVER;
+  if (!((nodemailerServices.indexOf(wellKnownServiceOrServer) > (-1)) || (nodemailerServices == 'server'))) {
+    return console.log(`WELL_KNOWN_SERVICE_OR_SERVER should be 'server' or a known service by Nodemailer`);
   } else {
     let transporter = null;
-    if (gmailOrServer == 'gmail') {
+    if (wellKnownServiceOrServer != 'server') {
       transporter = nodemailer.createTransport({
-        service: 'gmail',
+        service: wellKnownServiceOrServer,
         auth: {
           user: process.env.EMAIL_ADDRESS,
           pass: process.env.EMAIL_PASSWORD
@@ -82,20 +84,12 @@ const processEmailSmtp = async function(email) {
       }));
     };
 
-    let attachments = null;
-    if (email.attachments) {
-      attachments = email.attachments.map((attachment) => {
-        return {
-          filename: attachment.filename,
-          path: attachment.dataSource
-        };
-      });
-    } else {
-      attachments = [];
-    }
+    const attachments = (email.attachments || []).map((attachment) => {
+      return { filename: attachment.filename, path: attachment.dataSource };
+    });
 
     const mailOptions = {
-      from: `${fromName} ${email.from}`,
+      from: `${fromName} ${email.messageFrom}`,
       to: email.emailTo,
       cc: email.emailCc,
       subject: email.messageSubject,
