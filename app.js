@@ -2,6 +2,7 @@ import { app, errorHandler } from 'mu';
 import { CronJob } from 'cron';
 import {
   fetchEmailsToBeSent,
+  createSentDate,
   setEmailToMailbox,
   updateEmailId,
   wellKnownServices
@@ -10,6 +11,7 @@ import request from 'request';
 
 const fromName = process.env.FROM_NAME || '';
 const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/1 * * * *';
+const hoursDeliveringTimeout = process.env.HOURS_DELIVERING_TIMEOUT || 1;
 const nodemailer = require('nodemailer');
 const graphName = process.env.GRAPH_NAME || 'http://mu.semte.ch/graphs/system/email';
 const nodemailerServices = wellKnownServices();
@@ -40,13 +42,24 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
         console.log(`Message moved to sending: ${email.uuid}`);
 
         const smtpOrRest = process.env.SMTP_OR_REST;
-        if (smtpOrRest == 'smtp') {
-          await processEmailSmtp(email);
-        } else if (smtpOrRest == 'rest') {
-          //TODO
-        } else {
-          return console.log(`SMTP_OR_REST should be 'smtp' or 'rest'`);
+
+        if(!email.sentDate) {
+          await createSentDate(graphName, email);
         }
+
+        if(filterDeliveringTimeout(email)) {
+          if (smtpOrRest == 'smtp') {
+            await processEmailSmtp(email);
+          } else if (smtpOrRest == 'rest') {
+            //TODO
+          } else {
+            return console.log(`SMTP_OR_REST should be 'smtp' or 'rest'`);
+          }
+        } else {
+          await setEmailToMailbox(graphName, email.uuid, "failbox");
+          console.log(`Timeout reached, message moved to failbox: ${email.uuid}`);
+        }
+
       } catch (err) {
         console.log(`Failed to process email sending for email ${email.uuid}: ${err}`);
         await setEmailToMailbox(graphName, email.uuid, "outbox");
@@ -113,6 +126,12 @@ const processEmailSmtp = async function(email) {
       }
     });
   }
+};
+
+const filterDeliveringTimeout = function( email ) {
+  let modifiedDate = new Date(email.sentDate);
+  let currentDate = new Date();
+  return ((currentDate - modifiedDate) / (1000 * 60 * 60)) <= parseInt(hoursDeliveringTimeout);
 };
 
 app.use(errorHandler);

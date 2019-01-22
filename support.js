@@ -35,6 +35,7 @@ const fetchEmailsToBeSent = async function(graphName) {
       ?messageId
       ?plainTextMessageContent
       ?htmlMessageContent
+      ?sentDate
     WHERE {
       GRAPH ${sparqlEscapeUri(graphName)} {
         <http://data.lblod.info/id/mailboxes/1> fni:hasPart ?mailfolder.
@@ -60,12 +61,38 @@ const fetchEmailsToBeSent = async function(graphName) {
         BIND('' as ?defaultHtmlMessageContent).
         OPTIONAL {?email nmo:htmlMessageContent ?optionalHtmlMessageContent}.
         BIND(coalesce(?optionalHtmlMessageContent, ?defaultHtmlMessageContent) as ?htmlMessageContent).
+
+        BIND('' as ?defaultSentDate).
+        OPTIONAL {?email nmo:sentDate ?optionalSentDate}.
+        BIND(coalesce(?optionalSentDate, ?defaultSentDate) as ?sentDate).
       }
     }
-    GROUP BY ?email ?uuid ?messageSubject ?messageFrom ?messageId ?plainTextMessageContent ?htmlMessageContent
+    GROUP BY ?email ?uuid ?messageSubject ?messageFrom ?messageId ?plainTextMessageContent ?htmlMessageContent ?sentDate
   `);
   return parseResult(result);
 };
+
+const createSentDate = async function(graphName, email) {
+  const sentDate = new Date().toISOString();
+  const result = await query(`
+    PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
+    PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
+    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/03/22/nie#>
+
+    INSERT {
+       GRAPH ${sparqlEscapeUri(graphName)} {
+           ?email nmo:sentDate "${sentDate}".
+        }
+    }
+    WHERE {
+      GRAPH ${sparqlEscapeUri(graphName)} {
+            ?email a nmo:Email.
+            ?email nmo:messageId "${email.uuid}".
+        }
+    }
+  `);
+  email.sentDate = sentDate;
+}
 
 const setEmailToMailbox = async function(graphName, emailId, mailboxName) {
   const result = await query(`
@@ -176,6 +203,7 @@ const wellKnownServices = function() {
 
 export {
   fetchEmailsToBeSent,
+  createSentDate,
   setEmailToMailbox,
   updateEmailId,
   wellKnownServices

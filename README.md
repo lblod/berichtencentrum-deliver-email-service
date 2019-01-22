@@ -22,7 +22,8 @@ services:
 #### System configuration
 
 ```
-EMAIL_CRON_PATTERN: optional, default '*/5 * * * * *'
+EMAIL_CRON_PATTERN: optional, default '*/1 * * * * *'
+HOURS_DELIVERING_TIMEOUT: optional, default '1'
 GRAPH_NAME: optional, 'http://graph/url', default 'http://mu.semte.ch/graphs/system/email'
 ```
 
