@@ -87,7 +87,7 @@ const createSentDate = async function(graphName, email) {
     WHERE {
       GRAPH ${sparqlEscapeUri(graphName)} {
             ?email a nmo:Email.
-            ?email nmo:messageId "${email.uuid}".
+            ?email <http://mu.semte.ch/vocabularies/core/uuid> "${email.uuid}".
         }
     }
   `);
