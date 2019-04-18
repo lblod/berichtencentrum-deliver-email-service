@@ -1,5 +1,5 @@
 import { app, sparqlEscapeString, sparqlEscapeUri } from 'mu';
-import { querySudo as query } from './auth-sudo';
+import { querySudo as query } from '@lblod/mu-auth-sudo';
 
 /**
  * Convert results of select query to an array of objects.

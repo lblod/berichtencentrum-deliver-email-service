@@ -3,6 +3,7 @@
   "version": "0.2.1",
   "description": "Microservice that delivers emails from a mail folder",
   "dependencies": {
+    "@lblod/mu-auth-sudo": "^0.2.0",
     "cron": "^1.5.1",
     "nodemailer": "^4.7.0",
     "request": "^2.88.0"
