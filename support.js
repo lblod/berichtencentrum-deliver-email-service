@@ -20,7 +20,7 @@ const parseResult = function(result) {
  * @method fetchEmailsToBeSent
  * @return {Array}
  */
-const fetchEmailsToBeSent = async function(graphName) {
+const fetchEmailsToBeSent = async function(graphName, mailfolderUri) {
   const result = await query(`
     PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
     PREFIX fni: <http://www.semanticdesktop.org/ontologies/2007/03/22/fni#>
@@ -38,7 +38,7 @@ const fetchEmailsToBeSent = async function(graphName) {
       ?sentDate
     WHERE {
       GRAPH ${sparqlEscapeUri(graphName)} {
-        <http://data.lblod.info/id/mailboxes/1> fni:hasPart ?mailfolder.
+        ${sparqlEscapeUri(mailfolderUri)} fni:hasPart ?mailfolder.
         ?mailfolder nie:title "outbox".
         ?email nmo:isPartOf ?mailfolder.
         ?email <http://mu.semte.ch/vocabularies/core/uuid> ?uuid.

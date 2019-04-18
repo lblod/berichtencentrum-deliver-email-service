@@ -25,6 +25,7 @@ services:
 EMAIL_CRON_PATTERN: optional, default '*/1 * * * * *'
 HOURS_DELIVERING_TIMEOUT: optional, default '1'
 GRAPH_NAME: optional, 'http://graph/url', default 'http://mu.semte.ch/graphs/system/email'
+MAILFOLDER_URI, optional, 'http://mailbox/uri', default 'http://data.lblod.info/id/mailboxes/1'
 ```
 
 #### Protocole choice

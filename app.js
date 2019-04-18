@@ -14,6 +14,7 @@ const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/1 * * * *';
 const hoursDeliveringTimeout = process.env.HOURS_DELIVERING_TIMEOUT || 1;
 const nodemailer = require('nodemailer');
 const graphName = process.env.GRAPH_NAME || 'http://mu.semte.ch/graphs/system/email';
+const mailfolderUri = process.env.MAILFOLDER_URI || 'http://data.lblod.info/id/mailboxes/1';
 const nodemailerServices = wellKnownServices();
 
 app.get('/', async function(req, res) {
@@ -27,7 +28,7 @@ new CronJob(cronFrequency, function() {
 
 app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
   try {
-    const emails = await fetchEmailsToBeSent(graphName);
+    const emails = await fetchEmailsToBeSent(graphName, mailfolderUri);
     if (emails.length == 0) {
       console.log(`No emails found that need to be sent`);
       return res.status(204).end();
