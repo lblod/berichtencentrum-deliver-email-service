@@ -35,7 +35,7 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
     }
     console.log(`Found ${emails.length} emails to send`);
 
-    Promise.all(emails.map(async (email) => {
+    for (const email of emails) {
       console.log(`Start sending email ${email.uuid}`);
 
       try {
@@ -66,7 +66,7 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
         await setEmailToMailbox(graphName, email.uuid, "outbox");
         console.log(`Message moved back to outbox: ${email.uuid}`);
       }
-    }));
+    }
   } catch (e) {
     return next(new Error(e.message));
   }
