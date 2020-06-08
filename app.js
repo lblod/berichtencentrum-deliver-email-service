@@ -37,7 +37,6 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
 
     for (const email of emails) {
       console.log(`Start sending email ${email.uuid}`);
-
       try {
         await setEmailToMailbox(graphName, email.uuid, "sending");
         console.log(`Message moved to sending: ${email.uuid}`);
@@ -48,23 +47,27 @@ app.patch('/berichtencentrum-email-delivery/', async function(req, res, next) {
           await createSentDate(graphName, email);
         }
 
-        if(filterDeliveringTimeout(email)) {
+        if (filterDeliveringTimeout(email)) {
           if (smtpOrRest == 'smtp') {
             await processEmailSmtp(email);
           } else if (smtpOrRest == 'rest') {
-            //TODO
+            // TODO when needed
+            console.log(`Sending emails via 'rest' is not supported at the moment.`);
           } else {
-            return console.log(`SMTP_OR_REST should be 'smtp' or 'rest'`);
+            console.log(`SMTP_OR_REST should be 'smtp' or 'rest'`);
           }
         } else {
           await setEmailToMailbox(graphName, email.uuid, "failbox");
           console.log(`Timeout reached, message moved to failbox: ${email.uuid}`);
         }
-
-      } catch (err) {
-        console.log(`Failed to process email sending for email ${email.uuid}: ${err}`);
+      } catch (e) {
+        console.log(`An error has occured while processing the email ${email.uuid}: ${e}`);
         await setEmailToMailbox(graphName, email.uuid, "outbox");
         console.log(`Message moved back to outbox: ${email.uuid}`);
+        if (e.responseCode && error.responseCode == 452) { // 452 = Too many emails sent or too many recipients
+          console.log("The server is saturated, clearing the email queue until next round.")
+          break;
+        }
       }
     }
   } catch (e) {
@@ -112,20 +115,13 @@ const processEmailSmtp = async function(email) {
       attachments: attachments
     };
 
-    transporter.sendMail(mailOptions, async (error, info) => {
-      if (error) {
-        console.log(`An error has occured while sending message ${email.uuid} : ${error}`);
-        await setEmailToMailbox(graphName, email.uuid, "outbox");
-        console.log(`Message moved back to outbox: ${email.uuid}`);
-      } else {
-        console.log(`Message sent: %s`, email.uuid);
-        await setEmailToMailbox(graphName, email.uuid, "sentbox");
-        console.log(`Message moved to sentbox: ${email.uuid}`);
-        await updateEmailId(graphName, email.messageId, info.messageId);
-        console.log(`MessageId updated from ${email.messageId} to ${info.messageId}`);
-        email.messageId = info.messageId;
-      }
-    });
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Message sent: %s`, email.uuid);
+    await setEmailToMailbox(graphName, email.uuid, "sentbox");
+    console.log(`Message moved to sentbox: ${email.uuid}`);
+    await updateEmailId(graphName, email.messageId, info.messageId);
+    console.log(`MessageId updated from ${email.messageId} to ${info.messageId}`);
+    email.messageId = info.messageId;
   }
 };
 
