@@ -14,6 +14,7 @@ const cronFrequency = process.env.EMAIL_CRON_PATTERN || '*/1 * * * *';
 const hoursDeliveringTimeout = process.env.HOURS_DELIVERING_TIMEOUT || 1;
 const nodemailer = require('nodemailer');
 const graphName = process.env.GRAPH_NAME || 'http://mu.semte.ch/graphs/system/email';
+// TODO support a list of mailfolderUris to be able to get email for multiple mailboxes
 const mailfolderUri = process.env.MAILFOLDER_URI || 'http://data.lblod.info/id/mailboxes/1';
 const nodemailerServices = wellKnownServices();
 
