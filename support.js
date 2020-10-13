@@ -32,6 +32,7 @@ const fetchEmailsToBeSent = async function(graphName, mailfolderUri) {
       ?messageFrom
       (group_concat(distinct ?emailTo;separator=",") as ?emailTo)
       (group_concat(distinct ?emailCc;separator=",") as ?emailCc)
+      (group_concat(distinct ?emailBcc;separator=",") as ?emailBcc)
       ?messageId
       ?plainTextMessageContent
       ?htmlMessageContent
@@ -49,6 +50,10 @@ const fetchEmailsToBeSent = async function(graphName, mailfolderUri) {
         BIND('' as ?defaultEmailCc).
         OPTIONAL {?email nmo:emailCc ?optionalEmailCc}.
         BIND(coalesce(?optionalEmailCc, ?defaultEmailCc) as ?emailCc).
+
+        BIND('' as ?defaultEmailBcc).
+        OPTIONAL {?email nmo:emailBcc ?optionalEmailBcc}.
+        BIND(coalesce(?optionalEmailBcc, ?defaultEmailBcc) as ?emailBcc).
 
         BIND('' as ?defaultmessageId).
         OPTIONAL {?email nmo:messageId ?optionalMessageId}.

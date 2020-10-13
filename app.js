@@ -110,6 +110,7 @@ const processEmailSmtp = async function(email) {
       from: `${fromName} ${email.messageFrom}`,
       to: email.emailTo,
       cc: email.emailCc,
+      bcc: email.emailBcc,
       subject: email.messageSubject,
       text: email.plainTextMessageContent,
       html: email.htmlMessageContent,
